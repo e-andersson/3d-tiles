@@ -207,6 +207,15 @@ define([
         var webgl2 = false;
         var glContext;
 
+        // Start: Vricon-specific change:
+        // The drawing buffer needs to be preserved in order to
+        // access create thumbnails from the current canvas view
+        // Is there a better way to do this?
+        // TODO: What is the performance penalty like?
+        webglOptions.preserveDrawingBuffer = true;
+        // End
+
+
         if (defaultToWebgl2 && webgl2Supported) {
             glContext = canvas.getContext('webgl2', webglOptions) || canvas.getContext('experimental-webgl2', webglOptions) || undefined;
             if (defined(glContext)) {
@@ -1101,7 +1110,7 @@ define([
      *
      * @example
      * var object = context.getObjectByPickColor(pickColor);
-     * 
+     *
      * @see Context#createPickId
      */
     Context.prototype.getObjectByPickColor = function(pickColor) {
@@ -1152,7 +1161,7 @@ define([
      *   primitive : this,
      *   id : this.id
      * });
-     * 
+     *
      * @see Context#getObjectByPickColor
      */
     Context.prototype.createPickId = function(object) {
