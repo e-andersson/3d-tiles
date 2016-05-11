@@ -490,6 +490,115 @@ define([
 
         var zoomOnVector = mode === SceneMode.COLUMBUS_VIEW;
 
+        var pickDistance;
+        var pickVectorScratch = new Cartesian3();
+        var vZoomThreshold = 1500000;
+        if (pickedPosition) {
+            pickDistance = Cartesian3.magnitude(Cartesian3.subtract(camera.positionWC, pickedPosition, pickVectorScratch));
+        }
+
+        /* If a position was picked and if the distance to the picking point is below a certain threshold,
+         * use a different zooming algorithm that better maintains the target point.
+         */
+        if (pickedPosition && pickDistance < vZoomThreshold) {
+            object._zoomMouseStart = Cartesian2.clone(startPosition, object._zoomMouseStart);
+            object._zoomWorldPosition = Cartesian3.clone(pickedPosition, object._zoomWorldPosition);
+
+            var scratch = new Cartesian3();
+            var scratch2 = new Cartesian3();
+            var scratch3 = new Cartesian3();
+
+            var pos = new Cartesian3();
+            Cartesian3.clone(camera.positionWC, pos);
+            var target = new Cartesian3();
+            Cartesian3.clone(object._zoomWorldPosition, target);
+
+            var n1 = new Cartesian3();
+            Cartesian3.normalize(target, n1);
+            var n2 = new Cartesian3();
+            Cartesian3.normalize(pos, n2);
+
+            if (Cartesian3.dot(n1, n2) < 0.0) {
+                return;
+            }
+
+            var center = new Cartesian3();
+            var forwardVec = new Cartesian3();
+            Cartesian3.clone(camera.directionWC, forwardVec);
+            Cartesian3.add(pos, Cartesian3.multiplyByScalar(forwardVec, 1000, scratch), center);
+
+
+            var diffScratch = new Cartesian3();
+            Cartesian3.subtract(target, pos, diffScratch);
+            Cartesian3.normalize(diffScratch, diffScratch);
+
+            var alpha = Math.acos( -Cartesian3.dot( n2, diffScratch ) );
+            var r1 = Cartesian3.magnitude( pos );
+            var a = Cartesian3.magnitude( target );
+            //var scale = (r1 - a - distance) / (r1 - a);
+            //var r2 = a + (r1 - a) * scale;
+            var r2 = r1 - distance;
+            var l = Cartesian3.magnitude(Cartesian3.subtract(target, pos, scratch));
+
+            //if (scale < 1.0 && l < 0) {return;}
+
+            var gamma = Math.asin( CesiumMath.clamp( l / a * Math.sin(alpha), -1.0, 1.0 ) );
+            var delta = Math.asin( CesiumMath.clamp( r2 / a * Math.sin(alpha), -1.0, 1.0 ) );
+            var beta = gamma - delta + alpha;
+
+            var up = new Cartesian3();
+            Cartesian3.normalize(pos, up);
+            var right = new Cartesian3();
+            Cartesian3.normalize( Cartesian3.cross(Cartesian3.subtract(target, pos, scratch), up, scratch2), right );
+            var forward = new Cartesian3();
+            Cartesian3.normalize( Cartesian3.cross(up, right, scratch), forward );
+
+            // Calculate new position to move to
+            Cartesian3.multiplyByScalar(Cartesian3.normalize(center, scratch), (Cartesian3.magnitude(center) - (r1 - r2)), center);
+            Cartesian3.normalize(pos, pos);
+            Cartesian3.multiplyByScalar(pos, r2, pos);
+
+            // Pan
+            var pMid = new Cartesian3();
+            Cartesian3.multiplyByScalar(Cartesian3.add(
+                Cartesian3.multiplyByScalar(up, Math.cos(beta) - 1, scratch2),
+                Cartesian3.multiplyByScalar(forward, Math.sin(beta), scratch3),
+                scratch
+            ), r2, pMid);
+            Cartesian3.add(pos, pMid, pos);
+
+            Cartesian3.normalize(center, up);
+            Cartesian3.normalize( Cartesian3.cross(up, right, scratch), forward );
+
+            var cMid = new Cartesian3();
+            Cartesian3.multiplyByScalar(Cartesian3.add(
+                Cartesian3.multiplyByScalar(up, Math.cos(beta) - 1, scratch2),
+                Cartesian3.multiplyByScalar(forward, Math.sin(beta), scratch3),
+                scratch
+            ), Cartesian3.magnitude(center), cMid);
+            Cartesian3.add(center, cMid, center);
+
+
+            // Update camera
+
+            // Set new position
+            Cartesian3.clone(pos, camera.position);
+
+            // Set new direction
+            Cartesian3.normalize(Cartesian3.subtract(center, pos, scratch), camera.direction);
+
+            // Set new right vector
+            /* WARNING: Below cross product is incorrect, should be up * direction, not the other way around.
+             * This is a workaround that appears to trigger some Cesium camera calculations.
+             * With the seemingly correct version, scene behavior is not right.
+             * (Scene becomes dark when zooming out, and black holes pop up.)
+             */
+            //Cartesian3.cross(camera.direction, camera.upWC, camera.right);
+            Cartesian3.cross(camera.upWC, camera.direction, camera.right);
+
+            return;
+        }
+
         if (!sameStartPosition || rotatingZoom) {
             if (mode === SceneMode.SCENE2D) {
                 var worldPosition = object._zoomWorldPosition;
@@ -1821,7 +1930,7 @@ define([
      *
      * @example
      * controller = controller && controller.destroy();
-     * 
+     *
      * @see ScreenSpaceCameraController#isDestroyed
      */
     ScreenSpaceCameraController.prototype.destroy = function() {
