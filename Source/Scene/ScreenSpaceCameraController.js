@@ -492,20 +492,18 @@ define([
 
         var pickDistance;
         var pickVectorScratch = new Cartesian3();
-        var vZoomThreshold = 1500000;
+        var useVZoom;
+        var vZoomThreshold = 2500000;
         if (pickedPosition) {
             pickDistance = Cartesian3.magnitude(Cartesian3.subtract(camera.position, pickedPosition, pickVectorScratch));
+            useVZoom = pickDistance < vZoomThreshold && camera.positionCartographic.height < 1000000 && distance > 0.0;
+            object._zoomWorldPosition = Cartesian3.clone(pickedPosition, object._zoomWorldPosition);
         }
 
         /* If a position was picked and if the distance to the picking point is below a certain threshold,
          * use a different zooming algorithm that better maintains the target point.
          */
-         var useVZoom = pickDistance < vZoomThreshold || camera.pitch < 0.2;
-        if (pickedPosition || useVZoom) {
-            console.log('\nvZoom\n');
-            //object._zoomMouseStart = Cartesian2.clone(startPosition, object._zoomMouseStart);
-            //object._zoomWorldPosition = Cartesian3.clone(pickedPosition, object._zoomWorldPosition);
-
+        if (pickedPosition && useVZoom) {
             var scratch = new Cartesian3();
             var scratch2 = new Cartesian3();
             var scratch3 = new Cartesian3();
