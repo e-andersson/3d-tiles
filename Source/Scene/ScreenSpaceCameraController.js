@@ -500,8 +500,9 @@ define([
         /* If a position was picked and if the distance to the picking point is below a certain threshold,
          * use a different zooming algorithm that better maintains the target point.
          */
-         var useVZoom = pickDistance < vZoomThreshold || camera.pitch <
-        if (pickedPosition && pickDistance < vZoomThreshold) {
+         var useVZoom = pickDistance < vZoomThreshold || camera.pitch < 0.2;
+        if (pickedPosition || useVZoom) {
+            console.log('\nvZoom\n');
             //object._zoomMouseStart = Cartesian2.clone(startPosition, object._zoomMouseStart);
             //object._zoomWorldPosition = Cartesian3.clone(pickedPosition, object._zoomWorldPosition);
 
