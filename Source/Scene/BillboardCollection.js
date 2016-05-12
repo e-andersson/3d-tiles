@@ -1359,7 +1359,10 @@ define([
             if (!defined(this._rs)) {
                 this._rs = RenderState.fromCache({
                     depthTest : {
-                        enabled : true
+                        /* Vricon change: temporarily disabled to make billborads
+                         * visible through terrain/obscuring buildings
+                         */
+                        enabled : false
                     },
                     blending : BlendingState.ALPHA_BLEND
                 });

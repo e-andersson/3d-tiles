@@ -238,7 +238,7 @@ define([
            Cesium.Cartographic.fromDegrees(-77.02, 38.53)]),
      *   width : 1
      * });
-     * 
+     *
      * @see PolylineCollection#remove
      * @see PolylineCollection#removeAll
      * @see PolylineCollection#update
@@ -269,7 +269,7 @@ define([
      * @example
      * var p = polylines.add(...);
      * polylines.remove(p);  // Returns true
-     * 
+     *
      * @see PolylineCollection#add
      * @see PolylineCollection#removeAll
      * @see PolylineCollection#update
@@ -305,7 +305,7 @@ define([
      * polylines.add(...);
      * polylines.add(...);
      * polylines.removeAll();
-     * 
+     *
      * @see PolylineCollection#add
      * @see PolylineCollection#remove
      * @see PolylineCollection#update
@@ -440,7 +440,11 @@ define([
         }
 
         var pass = frameState.passes;
-        var useDepthTest = (frameState.morphTime !== 0.0);
+        /* Vricon change: depth test disabled for Polylines to make them visible
+         * through terrain. Temporary solution.
+         * var useDepthTest = (frameState.morphTime !== 0.0);
+         */
+         var useDepthTest = false;
 
         if (!defined(this._opaqueRS) || this._opaqueRS.depthTest.enabled !== useDepthTest) {
             this._opaqueRS = RenderState.fromCache({
@@ -643,7 +647,7 @@ define([
      *
      * @example
      * polylines = polylines && polylines.destroy();
-     * 
+     *
      * @see PolylineCollection#isDestroyed
      */
     PolylineCollection.prototype.destroy = function() {
