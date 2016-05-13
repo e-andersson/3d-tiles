@@ -490,6 +490,11 @@ define([
 
         var zoomOnVector = mode === SceneMode.COLUMBUS_VIEW;
 
+        /* Currently Vricon-only changes to zoom functioning
+         * Adjusted to better maintain pick point when zooming towards datasets
+         * at not-too-great distances.
+         * Intended for better integration with the rest of the zooming code.
+         */
         var pickDistance;
         var pickVectorScratch = new Cartesian3();
         var useVZoom;
@@ -591,6 +596,7 @@ define([
 
             return;
         }
+        // End of vricon-specific zooming
 
         if (!sameStartPosition || rotatingZoom) {
             if (mode === SceneMode.SCENE2D) {
